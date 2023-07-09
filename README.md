@@ -1,4 +1,4 @@
-[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](https://raw.githubusercontent.com/dblume/song-deduper/main/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/dblume/song-deduper/main/LICENSE.txt)
 ![python3.x](https://img.shields.io/badge/python-3.x-green.svg)
 
 ## Song De-Duper
@@ -82,4 +82,4 @@ Finally, compare the audio fingerprints.
 
 ## Licence
 
-This software uses the [Apache License 2.0](https://raw.githubusercontent.com/dblume/song-deduper/main/LICENSE)
+This software uses the [MIT License](https://raw.githubusercontent.com/dblume/song-deduper/main/LICENSE.txt)

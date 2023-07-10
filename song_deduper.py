@@ -178,23 +178,42 @@ def get_music_datas(path: str, fname_prefix: str) -> Dict[str, MusicData]:
     return d
 
 
+def process_music_datas(music_datas: Dict) -> None:
+    hashes = defaultdict(list)
+    tags = defaultdict(list)
+    for fname, info in music_datas.items():
+        hashes[info.md5].append(fname)
+        tags[(info.artist, info.title)].append(fname)
+
+    print_dupes(hashes, music_datas)
+    print_dupes(tags, music_datas)
+
+
+def print_dupes(dupes_dict: Dict, music_datas: Dict) -> None:
+    for k, fnames in dupes_dict.items():
+        if len(fnames) == 1:
+            continue
+        print(f"\nSame Key {k}:")
+        prev_fingerprint = None
+        for fname in fnames:
+            # TODO: Also compare other keys, like album, track number?
+            if prev_fingerprint is None:
+                print(f"---- {fname}")
+            else:
+                similarity = acoustid.compare_fingerprints(prev_fingerprint,
+                                 music_datas[fname].fingerprint[1])
+                print(f"{similarity:1.2f} {fname}")
+            prev_fingerprint = music_datas[fname].fingerprint[1]
+
+
 def main(path: str, debug: bool, fname_prefix: str) -> None:
     music_datas = get_music_datas(path, fname_prefix)
+    process_music_datas(music_datas)
 
-    hashes = defaultdict(list)
-    for fname, info in music_datas.items():
-        hashes[info.md5].append(fname[len(path)+1:])
-        print(fname)
-        print(info)
-        break
-
-    if platform.system() == 'Darwin':
-        # Get the file info from the PC
-        pc_hashes = defaultdict(list)
-        with open('pc_music_datas.pickle', 'rb') as f:
-            pc_d = pickle.load(f)
-            for fname, info in pc_d.items():
-                pc_hashes[info.md5].append(fname[len(path)+1:])
+#    other_platform = platform.system() == 'Darwin' and 'pc_music_datas.pickle' or 'mac_music_datas.pickle'
+#    with open(other_platform, 'rb') as f:
+#        op_music_datas = pickle.load(f)
+#        process_music_datas(op_music_datas)
 
 
 if __name__ == '__main__':

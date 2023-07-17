@@ -5,6 +5,7 @@ import os.path
 import sys
 import platform
 import time
+import eyed3     # python3 -m pip install eyeD3
 import mutagen   # python3 -m pip install mutagen
 from mutagen import easyid3
 import acoustid  # python3 -m pip install pyacoustid

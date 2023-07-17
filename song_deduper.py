@@ -251,13 +251,15 @@ def main(path: str, files_to_delete: Optional[str], fname_prefix: str) -> None:
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description='Just a template sample.')
-    parser.add_argument('-d', '--delete', help='Delete the filenames in the specified file.')
+    parser = ArgumentParser(description='Finds duplicate songs and helps delete them.')
+    parser.add_argument('-d', '--deletefile', help='Delete the filenames in the specified file.')
     if platform.system() == 'Darwin':
-        parser.add_argument('path', default='/Users/david/Music', nargs='?')
+        parser.add_argument('path', default='/Users/david/Music', nargs='?',
+                            help='Path to directory containing song hiearchy.')
         fname_prefix = "mac_"
     else:
-        parser.add_argument('path', default='/mnt/d/backup_from_lenovo/Users/David/Music', nargs='?')
+        parser.add_argument('path', default='/mnt/d/backup_from_lenovo/Users/David/Music', nargs='?',
+                            help='Path to directory containing song hiearchy.')
         fname_prefix = "pc_"
     args = parser.parse_args()
-    main(args.path, args.delete, fname_prefix)
+    main(args.path, args.deletefile, fname_prefix)

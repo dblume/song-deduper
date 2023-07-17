@@ -6,9 +6,26 @@
 Miscellaneous functions to de-duplicate songs. It uses the same fingerprints used by [MusicBrainz](https://musicbrainz.org/)
 and does similar de-duplication to that of [Beets](https://beets.io/).
 
+    $ ./song_deduper.py --help
+    usage: song_deduper.py [-h] [-d DELETEFILE] [path]
+    
+    Finds duplicate songs and helps delete them.
+    
+    positional arguments:
+      path                  Path to directory containing song hiearchy.
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -d DELETEFILE, --deletefile DELETEFILE
+                            Delete the filenames in the specified file.
+
 ## Example Use
 
-Run it on your music collection, and it'll print out which files are probably dupes. Here's three such files:
+Run it on your music collection, like so:
+
+    ./song_deduper.py /music
+
+And it'll print out which files are probably dupes. Here's three such files:
 
     Same ('Fiona Apple', 'Across The Universe'):
     ---- ---- /music/Fiona Apple - Across the Universe.mp3
@@ -20,6 +37,11 @@ The second one starts with "0.67 ----" meaning it's a near match for the first o
 The third one starts with "1.00 0.67" meaning it's a dupe of the first one, and only a near match for the second one.
 
 The truth is, the second file was a close enough match to delete too.
+
+If you made a file full of pathnames to songs to delete, you can send it to song\_deduper to remove them and to 
+remove them from the database (so you don't have to rebuild it from scratch).
+
+    ./song_deduper.py --deletefile pathnames_to_songs_to_delete.txt
 
 ## Getting Started
 

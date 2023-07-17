@@ -102,18 +102,6 @@ Or, on Ubuntu:
     make
     sudo make install
 
-## Running
-
-I'm just experimenting as I go. I want to de-dupe some songs on a PC iTunes archive,
-and then de-dupe those with songs on an old macOS iTunes archive.
-
-It turns out that most songs were moved or renamed. So matching on MD5 hashes is
-better than trying to match on filenames.
-
-Then comparing tags should be useful.
-
-Finally, compare the audio fingerprints.
-
 ## Is it any good?
 
 [Yes](https://news.ycombinator.com/item?id=3067434).

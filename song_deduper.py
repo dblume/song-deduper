@@ -234,6 +234,23 @@ def print_dupes(dupes_dict: Dict, music_datas: Dict[str, MusicData]) -> None:
             prev_fingerprints.append(music_datas[fname].fingerprint[1])
 
 
+def find_missing_songs(op_music_datas: Dict[str, MusicData], music_datas: Dict[str, MusicData]) -> None:
+    """See what songs are on the other platform but not on this one"""
+    tags = defaultdict(list)
+    tags_set = set()
+    for fname, info in music_datas.items():
+        tags[(info.artist, info.title)].append(fname)
+        tags_set.add((info.artist, info.title))
+    op_tags = defaultdict(list)
+    op_tags_set = set()
+    for fname, info in op_music_datas.items():
+        op_tags[(info.artist, info.title)].append(fname)
+        op_tags_set.add((info.artist, info.title))
+    diff = op_tags_set - tags_set
+    for i in diff:
+        print(f'Missing: {i}: {op_tags[i]}')
+
+
 def main(path: str, files_to_delete: Optional[str], fname_prefix: str) -> None:
     music_datas = get_music_datas(path, fname_prefix)
     if (files_to_delete):
@@ -244,10 +261,12 @@ def main(path: str, files_to_delete: Optional[str], fname_prefix: str) -> None:
                 pickle.dump(music_datas, f)
     process_music_datas(music_datas)
 
-#    other_platform = platform.system() == 'Darwin' and 'pc_music_datas.pickle' or 'mac_music_datas.pickle'
-#    with open(other_platform, 'rb') as f:
-#        op_music_datas = pickle.load(f)
-#        process_music_datas(op_music_datas)
+    # Optional, if you want to compare with a remote collection
+    other_platform = platform.system() == 'Darwin' and 'pc_music_datas.pickle' or 'mac_music_datas.pickle'
+    with open(other_platform, 'rb') as f:
+        op_music_datas = pickle.load(f)
+        process_music_datas(op_music_datas)
+        find_missing_songs(op_music_datas, music_datas)
 
 
 if __name__ == '__main__':

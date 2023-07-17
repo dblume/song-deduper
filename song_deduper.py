@@ -35,15 +35,6 @@ class MusicData:
     md5: str
 
 
-def musicdata_from_eyed3(f, fingerprint, md5) -> MusicData:
-    if hasattr(f, 'tag') and f.tag is not None:
-        print(f'Artist:{f.tag.artist} Album:{f.tag.album} Title:{f.tag.title} Genre:{f.tag.genre} ({f.tag.track_num.count}/{f.tag.track_num.total})')
-        year = f.tag.getBestDate() and f.tag.getBestDate().year or None
-        return MusicData(f.tag.artist, f.tag.album, f.tag.title, f.tag.genre, year,
-                         f.tag.disc_num.count, f.tag.disc_num.total, f.tag.track_num.count, f.tag.track_num.total, fingerprint, md5)
-    return MusicData(None, None, None, None, None, None, None, None, None, fingerprint, md5)
-
-
 def musicdata_from_easyid3(m, fingerprint, md5) -> MusicData:
     try:
         artist = m["artist"][0]
@@ -134,8 +125,13 @@ def md5(fname: str) -> str:
     return hash_md5.hexdigest()
 
 
+def has_supported_file_extension(filename: str) -> bool:
+    return filename[-4:].lower() in ('.mp3', '.m4a')
+
+
 def glob_cache(path: str, fname_prefix: str) -> Sequence[str]:
-    """Try to read a pickle file of filenames"""
+    """Try to read a pickle file of filenames.
+    If it doesn't exist, create one."""
     files = []
     fname = fname_prefix + 'glob_cache.pickle'
     try:
@@ -143,7 +139,7 @@ def glob_cache(path: str, fname_prefix: str) -> Sequence[str]:
             files = pickle.load(f)
     except FileNotFoundError:
         for f in glob.glob(path + '/**', recursive=True):
-            if f.endswith('.mp3') or f.endswith('.m4a'):
+            if has_supported_file_extension(f):
                 files.append(f)
         files.sort()
         with open(fname, 'wb') as f:
@@ -151,35 +147,34 @@ def glob_cache(path: str, fname_prefix: str) -> Sequence[str]:
     return files
 
 
+def add_song_to_musicdata(song_file:str, music_datas:Dict[str, MusicData]) -> None:
+    """Create a MusicData from the song_file, add it to the dict."""
+    md5_ = md5(song_file)
+    fingerprint = acoustid.fingerprint_file(song_file)
+    if song_file.lower().endswith('.mp3'):
+        f = mutagen.easyid3.EasyID3(song_file)
+        md = musicdata_from_easyid3(f, fingerprint, md5_)
+    elif song_file.lower().endswith('.m4a'):
+        f = mutagen.File(song_file)
+        md = musicdata_from_m4a(f, fingerprint, md5_)
+    music_datas[song_file] = md
+
+
 def get_music_datas(path: str, fname_prefix: str) -> Dict[str, MusicData]:
-    """Try to read a pickle file of filename to MusicData"""
+    """Try to read a pickle file of a dict filename:MusicData
+    If there's no pickle file, make a new one."""
     fname = fname_prefix + pickle_filename
-    d = {}
+    musicdata = {}
     try:
         with open(fname, 'rb') as f:
-            d = pickle.load(f)
+            musicdata = pickle.load(f)
     except FileNotFoundError:
         files = glob_cache(path, fname_prefix)
-        count = 0
-        for fn in files:
-            if os.path.exists(fn):
-                md5_ = md5(fn)
-                fingerprint = acoustid.fingerprint_file(fn)
-                if fn.lower().endswith('.mp3'):
-                    f = mutagen.easyid3.EasyID3(fn)
-                    md = musicdata_from_easyid3(f, fingerprint, md5_)
-                elif fn.lower().endswith('.m4a'):
-                    f = mutagen.File(fn)
-                    md = musicdata_from_m4a(f, fingerprint, md5_)
-
-                # This was the eyed3 way:
-                #f = eyed3.load(fn)
-                #md = musicdata_from_eyed3(f, fingerprint, md5_)
-                d[fn] = md
-                count += 1
+        for song_file in files:
+            add_song_to_musicdata(song_file, musicdata)
         with open(fname, 'wb') as f:
-            pickle.dump(d, f)
-    return d
+            pickle.dump(musicdata, f)
+    return musicdata
 
 
 def delete_files(fname: str, music_datas: Dict[str, MusicData]) -> bool:
@@ -189,12 +184,8 @@ def delete_files(fname: str, music_datas: Dict[str, MusicData]) -> bool:
     changed = False
     for line in open(fname):
         fname = line.strip()
-        if os.path.isfile(fname) and \
-            (fname.lower().endswith('.mp3') or fname.lower().endswith('.m4a')):
-            try:
-                os.unlink(fname)
-            except FileNotFoundError:
-                print(f'Warn: Could not delete {fname}', file=sys.stderr)
+        if os.path.isfile(fname) and has_supported_file_extension(fname):
+            os.unlink(fname)
         else:
             print(f'Warn: Did not try to delete {fname}', file=sys.stderr)
 

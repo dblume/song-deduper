@@ -1,3 +1,5 @@
+[![Code Climate](https://codeclimate.com/github/dblume/song-deduper/badges/gpa.svg)](https://codeclimate.com/github/dblume/song-deduper)
+[![Issue Count](https://codeclimate.com/github/dblume/song-deduper/badges/issue_count.svg)](https://codeclimate.com/github/dblume/song-deduper/issues)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/dblume/song-deduper/main/LICENSE.txt)
 ![python3.x](https://img.shields.io/badge/python-3.x-green.svg)
 

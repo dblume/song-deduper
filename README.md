@@ -3,7 +3,23 @@
 
 ## Song De-Duper
 
-Miscellaneous functions to de-duplicate songs. It uses the same fingerprints used by [MusicBrainz](https://musicbrainz.org/).
+Miscellaneous functions to de-duplicate songs. It uses the same fingerprints used by [MusicBrainz](https://musicbrainz.org/)
+and does similar de-duplication to that of [Beets](https://beets.io/).
+
+## Example Use
+
+Run it on your music collection, and it'll print out which files are probably dupes. Here's three such files:
+
+    Same ('Fiona Apple', 'Across The Universe'):
+    ---- ---- /music/Fiona Apple - Across the Universe.mp3
+    0.67 ---- /music/Google Play/Fiona Apple/Pleasantville -Music From The/01 Across The Universe.mp3
+    1.00 0.67 /music/iTunes/Fiona Apple/When the Pawn Hits/11 Across The Universe.mp3
+
+The above three files matched on artist and song. The first one starts with "---- ----" meaning no fingerprints were compared yet.
+The second one starts with "0.67 ----" meaning it's a near match for the first one, but was not compared to the third one yet.
+The third one starts with "1.00 0.67" meaning it's a dupe of the first one, and only a near match for the second one.
+
+The truth is, the second file was a close enough match to delete too.
 
 ## Getting Started
 

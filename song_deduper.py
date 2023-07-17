@@ -15,6 +15,10 @@ from argparse import ArgumentParser
 from dataclasses import dataclass
 from collections.abc import Sequence
 from collections import defaultdict
+from typing import Optional
+
+pickle_filename = 'music_datas.pickle'
+
 
 @dataclass(frozen=True)
 class MusicData:
@@ -149,7 +153,7 @@ def glob_cache(path: str, fname_prefix: str) -> Sequence[str]:
 
 def get_music_datas(path: str, fname_prefix: str) -> Dict[str, MusicData]:
     """Try to read a pickle file of filename to MusicData"""
-    fname = fname_prefix + 'music_datas.pickle'
+    fname = fname_prefix + pickle_filename
     d = {}
     try:
         with open(fname, 'rb') as f:
@@ -178,7 +182,31 @@ def get_music_datas(path: str, fname_prefix: str) -> Dict[str, MusicData]:
     return d
 
 
-def process_music_datas(music_datas: Dict) -> None:
+def delete_files(fname: str, music_datas: Dict[str, MusicData]) -> bool:
+    """Given a filename of a file with a list of mp3s or m4as to delete,
+    delete them and also remove them from the music_datas dict.
+    Return whether an updated music_datas needs to be written to disk."""
+    changed = False
+    for line in open(fname):
+        fname = line.strip()
+        if os.path.isfile(fname) and \
+            (fname.lower().endswith('.mp3') or fname.lower().endswith('.m4a')):
+            try:
+                os.unlink(fname)
+            except FileNotFoundError:
+                print(f'Warn: Could not delete {fname}', file=sys.stderr)
+        else:
+            print(f'Warn: Did not try to delete {fname}', file=sys.stderr)
+
+        if fname in music_datas:
+            del music_datas[fname]
+            changed = True
+        else:
+            print(f'Warn: Not in MusicData: {fname}', file=sys.stderr)
+    return changed
+
+
+def process_music_datas(music_datas: Dict[str, MusicData]) -> None:
     hashes = defaultdict(list)
     tags = defaultdict(list)
     for fname, info in music_datas.items():
@@ -189,25 +217,31 @@ def process_music_datas(music_datas: Dict) -> None:
     print_dupes(tags, music_datas)
 
 
-def print_dupes(dupes_dict: Dict, music_datas: Dict) -> None:
+def print_dupes(dupes_dict: Dict, music_datas: Dict[str, MusicData]) -> None:
     for k, fnames in dupes_dict.items():
         if len(fnames) == 1:
             continue
-        print(f"\nSame Key {k}:")
-        prev_fingerprint = None
+        print(f"\nSame {k}:")
+        prev_fingerprints = []
         for fname in fnames:
             # TODO: Also compare other keys, like album, track number?
-            if prev_fingerprint is None:
-                print(f"---- {fname}")
-            else:
-                similarity = acoustid.compare_fingerprints(prev_fingerprint,
+            for fp in prev_fingerprints:
+                similarity = acoustid.compare_fingerprints(fp,
                                  music_datas[fname].fingerprint[1])
-                print(f"{similarity:1.2f} {fname}")
-            prev_fingerprint = music_datas[fname].fingerprint[1]
+                print(f"{similarity:1.2f} ", end='')
+            print('---- ' * (len(fnames) - len(prev_fingerprints) - 1), end='')
+            print(fname)
+            prev_fingerprints.append(music_datas[fname].fingerprint[1])
 
 
-def main(path: str, debug: bool, fname_prefix: str) -> None:
+def main(path: str, files_to_delete: Optional[str], fname_prefix: str) -> None:
     music_datas = get_music_datas(path, fname_prefix)
+    if (files_to_delete):
+        if delete_files(files_to_delete, music_datas):
+            fname = fname_prefix + pickle_filename
+            os.rename(fname, fname + '.old')
+            with open(fname, 'wb') as f:
+                pickle.dump(music_datas, f)
     process_music_datas(music_datas)
 
 #    other_platform = platform.system() == 'Darwin' and 'pc_music_datas.pickle' or 'mac_music_datas.pickle'
@@ -218,7 +252,7 @@ def main(path: str, debug: bool, fname_prefix: str) -> None:
 
 if __name__ == '__main__':
     parser = ArgumentParser(description='Just a template sample.')
-    parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-d', '--delete', help='Delete the filenames in the specified file.')
     if platform.system() == 'Darwin':
         parser.add_argument('path', default='/Users/david/Music', nargs='?')
         fname_prefix = "mac_"
@@ -226,4 +260,4 @@ if __name__ == '__main__':
         parser.add_argument('path', default='/mnt/d/backup_from_lenovo/Users/David/Music', nargs='?')
         fname_prefix = "pc_"
     args = parser.parse_args()
-    main(args.path, args.debug, fname_prefix)
+    main(args.path, args.delete, fname_prefix)
